@@ -1,44 +1,44 @@
 import { NextApiRequest, NextApiResponse } from "next";
-import { getSession } from 'next-auth/react';
-import { stripe } from "../../services/stripe";
-import { query as q } from "faunadb";
-import { fauna } from "../../services/fauna";
+import { getSession } from "next-auth/react";
+import { stripe } from '../../services/stripe'
+import { fauna } from '../../services/fauna'
+import { query as q } from 'faunadb'
 
-interface tempUser {
-    ref:{
-        id: string
+type User = {
+    ref: {
+        id: string;
     }
     data: {
-        stripe_customer_id: string
+        stripe_customer_id: string;
     }
 }
 
 export default async (req: NextApiRequest, res: NextApiResponse) => {
-    if(req.method === 'POST'){
-        const user = await req.body.user;
+    if (req.method === 'POST') {
+        const session = await getSession({ req });
 
-        const tempUser = await fauna.query<tempUser>(
-            q.Get(
+        const user = await fauna.query<User>(
+            q.Get( // pega as informações do usuário por e-mail (o e-mail é informado pelo session)
                 q.Match(
                     q.Index('user_by_email'),
-                    q.Casefold(user.email)
+                    q.Casefold(session.user.email)
                 )
             )
         )
 
-        let customerId = tempUser.data.stripe_customer_id
+        let customerId = user.data.stripe_customer_id
 
-        if(!customerId){
+        if (!customerId) {
             const stripeCustomer = await stripe.customers.create({
-                email: user.email,
-            });
+                email: session.user.email,
+            })
 
-            await fauna.query(
+            await fauna.query( // faz um update atraves do user.ref.id que vem de dentro do user que coletou as informações pelo q.Get
                 q.Update(
-                    q.Ref(q.Collection('users'), tempUser.ref.id),
+                    q.Ref(q.Collection('users'), user.ref.id),
                     {
                         data: {
-                            stripe_customer_id: stripeCustomer.id,
+                        stripe_customer_id: stripeCustomer.id
                         }
                     }
                 )
@@ -47,16 +47,12 @@ export default async (req: NextApiRequest, res: NextApiResponse) => {
             customerId = stripeCustomer.id
         }
 
-        
-
-        
-
         const stripeCheckoutSession = await stripe.checkout.sessions.create({
             customer: customerId,
             payment_method_types: ['card'],
             billing_address_collection: 'required',
             line_items: [
-                { price: 'price_1LZlQQKlCdi5ewN0uV3pND4H', quantity: 1}
+                { price: 'price_1LZlQQKlCdi5ewN0uV3pND4H', quantity: 1 }
             ],
             mode: 'subscription',
             allow_promotion_codes: true,
@@ -65,6 +61,7 @@ export default async (req: NextApiRequest, res: NextApiResponse) => {
         })
 
         return res.status(200).json({ sessionId: stripeCheckoutSession.id })
+
     } else {
         res.setHeader('Allow', 'POST')
         res.status(405).end('Method not allowed')
