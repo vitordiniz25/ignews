@@ -1,17 +1,16 @@
+import React from "react";
 import { GetStaticProps } from "next";
+import Image from "next/image";
 import Head from "next/head";
-import { SubscribeButton } from "../components/SubscribeButton";
-import { stripe } from "../services/stripe";
-import Styles from "./home.module.scss";
 
-// Client-side
-// Server-side
-// Static Site Generation
+import { SubscribeButton } from "../components/SubscribeButton";
+import styles from "./home.module.scss";
+import { stripe } from "../services/stripe";
 
 interface HomeProps {
   product: {
     priceId: string;
-    amount: number;
+    amount: string;
   };
 }
 
@@ -19,30 +18,35 @@ export default function Home({ product }: HomeProps) {
   return (
     <>
       <Head>
-        <title>ig.news</title>
+        <title>Home | ig.news</title>
       </Head>
 
-      <main className={Styles.contentContainer}>
-        <section className={Styles.hero}>
-          <span>👏 Hey, Welcome</span>
+      <main className={styles.contentContainer}>
+        <section className={styles.hero}>
+          <span>👏 Hey, welcome</span>
           <h1>
-            News about the <span>React</span> world.{" "}
+            News about <br /> the <span>React</span> word.
           </h1>
           <p>
             Get access to all the publications <br />
-            <span>for {product.amount}/month</span>
+            <span>for {product.amount} month</span>
           </p>
-          <SubscribeButton priceId={product.priceId} />
+          <SubscribeButton />
         </section>
 
-        <img src="/images/avatar.svg" alt="Girl Coding" />
+        <Image
+          src="/aqui/images/avatar.svg"
+          alt="girl coding"
+          width={176}
+          height={176}
+        />
       </main>
     </>
   );
 }
 
 export const getStaticProps: GetStaticProps = async () => {
-  const price = await stripe.prices.retrieve("price_1LZlQQKlCdi5ewN0uV3pND4H");
+  const price = await stripe.prices.retrieve("price_1LYv3GEnKha8QJxRqAzdRVDf");
 
   const product = {
     priceId: price.id,
