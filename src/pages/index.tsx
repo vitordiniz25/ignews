@@ -35,10 +35,10 @@ export default function Home({ product }: HomeProps) {
         </section>
 
         <Image
-          src="/aqui/images/avatar.svg"
+          src="/../images/avatar.svg"
           alt="girl coding"
-          width={176}
-          height={176}
+          width={400}
+          height={400}
         />
       </main>
     </>
@@ -46,7 +46,7 @@ export default function Home({ product }: HomeProps) {
 }
 
 export const getStaticProps: GetStaticProps = async () => {
-  const price = await stripe.prices.retrieve("price_1LYv3GEnKha8QJxRqAzdRVDf");
+  const price = await stripe.prices.retrieve("price_1LZlQQKlCdi5ewN0uV3pND4H");
 
   const product = {
     priceId: price.id,
